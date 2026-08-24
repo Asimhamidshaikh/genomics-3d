@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Computational Genomics Platform</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Load Three.js and OrbitControls from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <div id="app">
+    <!-- Left Sidebar Control Panel -->
+    <aside id="sidebar">
+      <div class="header">
+        <h2>Helix3D Engine</h2>
+        <span class="badge">v1.0</span>
+      </div>
+
+      <div class="panel-section">
+        <h3>Structure Controls</h3>
+        <button id="btn-generate" class="primary-btn">Generate DNA Strand</button>
+      </div>
+
+      <div class="panel-section">
+        <h3>Metrics</h3>
+        <div class="metric-card">
+          <span class="label">Base Pairs:</span>
+          <span id="metric-bp" class="value">0</span>
+        </div>
+        <div class="metric-card">
+          <span class="label">Status:</span>
+          <span id="metric-status" class="value text-green">Ready</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right 3D Canvas Area -->
+    <main id="canvas-container"></main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
+
