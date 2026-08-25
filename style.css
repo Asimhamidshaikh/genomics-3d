@@ -1,8 +1,72 @@
-/* FASTA & Export Controls */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #0b0f19;
+  color: #f3f4f6;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+#sidebar {
+  width: 340px;
+  background: #111827;
+  border-right: 1px solid #1f2937;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h2 {
+  font-size: 1.25rem;
+  color: #38bdf8;
+}
+
+.badge {
+  background: #1e293b;
+  color: #38bdf8;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+}
+
+.panel-section {
+  background: #1f2937;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.panel-section h3 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
 .text-input {
   width: 100%;
   padding: 10px;
-  background: #1f2937;
+  background: #111827;
   border: 1px solid #374151;
   border-radius: 6px;
   color: #fff;
@@ -13,6 +77,22 @@
 
 .text-input:focus {
   border-color: #38bdf8;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 10px;
+  background: #0284c7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.primary-btn:hover {
+  background: #0369a1;
 }
 
 .secondary-btn-blue {
@@ -32,10 +112,58 @@
   background: #4b5563;
 }
 
+.secondary-btn {
+  width: 100%;
+  padding: 10px;
+  background: #374151;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.secondary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .export-btn {
   background: #059669;
 }
 
 .export-btn:hover {
   background: #047857;
+}
+
+.metric-card {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.9rem;
+}
+
+.metric-card .value {
+  font-weight: bold;
+}
+
+.text-green {
+  color: #4ade80;
+}
+
+.inspector-card p {
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+  color: #d1d5db;
+}
+
+#canvas-container {
+  flex: 1;
+  height: 100vh;
 }
