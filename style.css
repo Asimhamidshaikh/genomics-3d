@@ -1,137 +1,41 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-body, html {
+/* FASTA & Export Controls */
+.text-input {
   width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background-color: #0b0f19;
-  color: #e2e8f0;
-}
-
-#app {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-}
-
-/* Sidebar Styling */
-#sidebar {
-  width: 320px;
-  background: #111827;
-  border-right: 1px solid #1f2937;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  z-index: 10;
-  overflow-y: auto;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.header h2 {
-  font-size: 1.25rem;
-  color: #38bdf8;
-}
-
-.badge {
-  background: #0284c7;
+  padding: 10px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 6px;
   color: #fff;
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 12px;
+  font-family: monospace;
+  margin-bottom: 8px;
+  outline: none;
 }
 
-.panel-section h3 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin-bottom: 12px;
-  letter-spacing: 0.05em;
+.text-input:focus {
+  border-color: #38bdf8;
 }
 
-/* Controls & Buttons */
-.primary-btn {
+.secondary-btn-blue {
   width: 100%;
-  padding: 12px;
-  background: #2563eb;
+  padding: 10px;
+  background: #374151;
   color: white;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
+  margin-top: 6px;
   transition: background 0.2s ease;
 }
 
-.primary-btn:hover {
-  background: #1d4ed8;
-}
-
-/* Metrics Cards */
-.metric-card {
-  display: flex;
-  justify-content: space-between;
-  background: #1f2937;
-  padding: 10px 14px;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-}
-
-.value {
-  font-weight: bold;
-}
-
-.text-green {
-  color: #4ade80;
-}
-
-/* Inspector Panel Styling */
-.inspector-card {
-  background: #1f2937;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  border-left: 3px solid #38bdf8;
-}
-
-.secondary-btn {
-  width: 100%;
-  padding: 10px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.secondary-btn:disabled {
+.secondary-btn-blue:hover {
   background: #4b5563;
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
-.secondary-btn:hover:not(:disabled) {
-  background: #b91c1c;
+.export-btn {
+  background: #059669;
 }
 
-/* 3D Canvas Container */
-#canvas-container {
-  flex-grow: 1;
-  height: 100%;
-  position: relative;
+.export-btn:hover {
+  background: #047857;
 }
-
