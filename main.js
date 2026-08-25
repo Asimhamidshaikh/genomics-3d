@@ -7,26 +7,18 @@ let dnaData = [];
 const container = document.getElementById('canvas-container');
 const btnGenerate = document.getElementById('btn-generate');
 const btnMutate = document.getElementById('btn-mutate');
+const btnLoadFasta = document.getElementById('btn-load-fasta');
+const btnExportPdb = document.getElementById('btn-export-pdb');
+const fastaInput = document.getElementById('fasta-input');
+
 const metricBP = document.getElementById('metric-bp');
 const metricStatus = document.getElementById('metric-status');
-
 const inspectPos = document.getElementById('inspect-pos');
 const inspectBase = document.getElementById('inspect-base');
 const inspectPair = document.getElementById('inspect-pair');
 
-const BASE_COLORS = {
-  A: 0x3b82f6,
-  T: 0xef4444,
-  C: 0xeab308,
-  G: 0x22c55e
-};
-
-const BASE_NAMES = {
-  A: 'Adenine',
-  T: 'Thymine',
-  C: 'Cytosine',
-  G: 'Guanine'
-};
+const BASE_COLORS = { A: 0x3b82f6, T: 0xef4444, C: 0xeab308, G: 0x22c55e };
+const BASE_NAMES = { A: 'Adenine', T: 'Thymine', C: 'Cytosine', G: 'Guanine' };
 
 function init() {
   scene = new THREE.Scene();
@@ -46,26 +38,44 @@ function init() {
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-  scene.add(ambientLight);
-
-  const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight1.position.set(20, 40, 20);
-  scene.add(dirLight1);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(20, 40, 20);
+  scene.add(dirLight);
 
   dnaGroup = new THREE.Group();
   scene.add(dnaGroup);
 
-  btnGenerate.addEventListener('click', () => generateDNA(30));
+  btnGenerate.addEventListener('click', () => generateRandomDNA(30));
+  btnLoadFasta.addEventListener('click', loadFastaSequence);
   btnMutate.addEventListener('click', mutateSelectedBase);
+  btnExportPdb.addEventListener('click', exportToPDB);
   window.addEventListener('click', onCanvasClick);
   window.addEventListener('resize', onWindowResize);
 
-  generateDNA(30);
+  generateRandomDNA(30);
   animate();
 }
 
-function generateDNA(numPairs = 30) {
+function generateRandomDNA(numPairs = 30) {
+  const bases = ['A', 'T', 'C', 'G'];
+  let seq = '';
+  for (let i = 0; i < numPairs; i++) {
+    seq += bases[Math.floor(Math.random() * bases.length)];
+  }
+  buildDNAFromSequence(seq);
+}
+
+function loadFastaSequence() {
+  const rawStr = fastaInput.value.trim().toUpperCase().replace(/[^ATCG]/g, '');
+  if (rawStr.length === 0) {
+    alert('Please enter a valid DNA sequence (using letters A, T, C, G).');
+    return;
+  }
+  buildDNAFromSequence(rawStr);
+}
+
+function buildDNAFromSequence(sequence) {
   while (dnaGroup.children.length > 0) {
     const obj = dnaGroup.children.pop();
     if (obj.geometry) obj.geometry.dispose();
@@ -75,13 +85,13 @@ function generateDNA(numPairs = 30) {
   dnaData = [];
   deselectNode();
 
+  const numPairs = sequence.length;
   const radius = 6;
   const heightStep = 1.5;
   const twistAngle = 0.4;
 
   const strand1Points = [];
   const strand2Points = [];
-  const bases = ['A', 'T', 'C', 'G'];
   const complementary = { A: 'T', T: 'A', C: 'G', G: 'C' };
 
   for (let i = 0; i < numPairs; i++) {
@@ -94,7 +104,7 @@ function generateDNA(numPairs = 30) {
     strand1Points.push(pos1);
     strand2Points.push(pos2);
 
-    const base1 = bases[Math.floor(Math.random() * bases.length)];
+    const base1 = sequence[i];
     const base2 = complementary[base1];
 
     dnaData.push({ index: i, base1, base2, pos1, pos2 });
@@ -119,7 +129,6 @@ function createBasePair(p1, p2, base1, base2, index) {
   const sphereGeom = new THREE.SphereGeometry(0.7, 16, 16);
   const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
 
-  // Connecting Base Pair Rungs (Cylinders)
   const dist = p1.distanceTo(midpoint);
   
   const geom1 = new THREE.CylinderGeometry(0.2, 0.2, dist, 8);
@@ -140,7 +149,6 @@ function createBasePair(p1, p2, base1, base2, index) {
   mesh2.lookAt(midpoint);
   dnaGroup.add(mesh2);
 
-  // Interactive Spheres (Nucleotide Nodes)
   const node1 = new THREE.Mesh(sphereGeom, mat1);
   node1.position.copy(p1);
   node1.userData = { index, base: base1, pair: base2, strand: 1 };
@@ -159,12 +167,9 @@ function onCanvasClick(event) {
 
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(dnaGroup.children);
-
   const sphere = intersects.find(item => item.object.geometry.type === 'SphereGeometry');
 
-  if (sphere) {
-    selectNode(sphere.object);
-  }
+  if (sphere) selectNode(sphere.object);
 }
 
 function selectNode(node) {
@@ -192,15 +197,38 @@ function deselectNode() {
 
 function mutateSelectedBase() {
   if (!selectedNode) return;
-
   const data = selectedNode.userData;
   const bases = ['A', 'T', 'C', 'G'].filter(b => b !== data.base);
   const newBase = bases[Math.floor(Math.random() * bases.length)];
 
   data.base = newBase;
   selectedNode.material.color.setHex(BASE_COLORS[newBase]);
-
   inspectBase.textContent = `${BASE_NAMES[newBase]} (${newBase}) [MUTATED]`;
+}
+
+// Export structural dataset as standard .PDB file
+function exportToPDB() {
+  if (dnaData.length === 0) return;
+
+  let pdbOutput = 'HEADER    HELIX3D GENERATED DNA STRUCTURE\n';
+  let atomIndex = 1;
+
+  dnaData.forEach((item, i) => {
+    const resName = item.base1.padStart(3, ' ');
+    const x1 = item.pos1.x.toFixed(3).padStart(8, ' ');
+    const y1 = item.pos1.y.toFixed(3).padStart(8, ' ');
+    const z1 = item.pos1.z.toFixed(3).padStart(8, ' ');
+    
+    // ATOM format line for Strand 1
+    pdbOutput += `ATOM  ${atomIndex.toString().padStart(5, ' ')}  P   ${resName} A${(i+1).toString().padStart(4, ' ')}    ${x1}${y1}${z1}  1.00  0.00           P\n`;
+    atomIndex++;
+  });
+
+  const blob = new Blob([pdbOutput], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'dna_structure.pdb';
+  link.click();
 }
 
 function animate() {
@@ -217,4 +245,4 @@ function onWindowResize() {
 }
 
 init();
-    
+
