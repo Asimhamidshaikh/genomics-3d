@@ -1,31 +1,38 @@
-// 1. Core Variables
 let scene, camera, renderer, controls;
-let dnaGroup; // Group container to hold all 3D DNA elements
+let dnaGroup;
+let raycaster, mouse;
+let selectedNode = null;
+let dnaData = []; // Array storing sequence data for mutation/inspection
 
 const container = document.getElementById('canvas-container');
 const btnGenerate = document.getElementById('btn-generate');
+const btnMutate = document.getElementById('btn-mutate');
 const metricBP = document.getElementById('metric-bp');
 const metricStatus = document.getElementById('metric-status');
 
-// Color palette for Nucleotide Base Pairs
+const inspectPos = document.getElementById('inspect-pos');
+const inspectBase = document.getElementById('inspect-base');
+const inspectPair = document.getElementById('inspect-pair');
+
 const BASE_COLORS = {
-  A: 0x3b82f6, // Adenine (Blue)
-  T: 0xef4444, // Thymine (Red)
-  C: 0xeab308, // Cytosine (Yellow)
-  G: 0x22c55e  // Guanine (Green)
+  A: 0x3b82f6,
+  T: 0xef4444,
+  C: 0xeab308,
+  G: 0x22c55e
 };
 
-// 2. Initialize 3D Environment
+const BASE_NAMES = {
+  A: 'Adenine',
+  T: 'Thymine',
+  C: 'Cytosine',
+  G: 'Guanine'
+};
+
 function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b0f19);
 
-  camera = new THREE.PerspectiveCamera(
-    60, 
-    container.clientWidth / container.clientHeight, 
-    0.1, 
-    1000
-  );
+  camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
   camera.position.set(0, 0, 50);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -36,7 +43,10 @@ function init() {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  // Lighting setup
+  // Raycaster for mouse interaction
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambientLight);
 
@@ -44,43 +54,34 @@ function init() {
   dirLight1.position.set(20, 40, 20);
   scene.add(dirLight1);
 
-  const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.5); // Soft blue rim light
-  dirLight2.position.set(-20, -40, -20);
-  scene.add(dirLight2);
-
-  // Initialize DNA Group container
   dnaGroup = new THREE.Group();
   scene.add(dnaGroup);
 
-  // Setup Event Listeners
   btnGenerate.addEventListener('click', () => generateDNA(30));
+  btnMutate.addEventListener('click', mutateSelectedBase);
+  window.addEventListener('click', onCanvasClick);
   window.addEventListener('resize', onWindowResize);
 
-  // Generate initial DNA strand
   generateDNA(30);
-
   animate();
 }
 
-// 3. Procedural 3D DNA Helix Generator Algorithm
 function generateDNA(numPairs = 30) {
-  // Clear existing DNA meshes from the scene
   while (dnaGroup.children.length > 0) {
     const obj = dnaGroup.children.pop();
     if (obj.geometry) obj.geometry.dispose();
     if (obj.material) obj.material.dispose();
   }
 
-  metricStatus.textContent = 'Generating...';
-  metricStatus.className = 'value';
+  dnaData = [];
+  deselectNode();
 
   const radius = 6;
   const heightStep = 1.5;
-  const twistAngle = 0.4; // Radians per step
+  const twistAngle = 0.4;
 
   const strand1Points = [];
   const strand2Points = [];
-
   const bases = ['A', 'T', 'C', 'G'];
   const complementary = { A: 'T', T: 'A', C: 'G', G: 'C' };
 
@@ -88,101 +89,111 @@ function generateDNA(numPairs = 30) {
     const y = (i - numPairs / 2) * heightStep;
     const angle = i * twistAngle;
 
-    // Parametric helical positions
-    const x1 = Math.cos(angle) * radius;
-    const z1 = Math.sin(angle) * radius;
-
-    const x2 = Math.cos(angle + Math.PI) * radius;
-    const z2 = Math.sin(angle + Math.PI) * radius;
-
-    const pos1 = new THREE.Vector3(x1, y, z1);
-    const pos2 = new THREE.Vector3(x2, y, z2);
+    const pos1 = new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
+    const pos2 = new THREE.Vector3(Math.cos(angle + Math.PI) * radius, y, Math.sin(angle + Math.PI) * radius);
 
     strand1Points.push(pos1);
     strand2Points.push(pos2);
 
-    // Pick random base pair (A-T or C-G)
     const base1 = bases[Math.floor(Math.random() * bases.length)];
     const base2 = complementary[base1];
 
-    // Create Base Pair connecting rungs
-    createBasePair(pos1, pos2, base1, base2);
+    dnaData.push({ index: i, base1, base2, pos1, pos2 });
+    createBasePair(pos1, pos2, base1, base2, i);
   }
 
-  // Build 3D Backbone Tubes
-  createBackboneTube(strand1Points, 0x38bdf8); // Strand 1 cyan
-  createBackboneTube(strand2Points, 0x818cf8); // Strand 2 indigo
+  createBackboneTube(strand1Points, 0x38bdf8);
+  createBackboneTube(strand2Points, 0x818cf8);
 
-  // Update UI Metrics
   metricBP.textContent = numPairs;
   metricStatus.textContent = 'Active';
-  metricStatus.className = 'value text-green';
 }
 
-// Helper: Create 3D Backbone Strand
 function createBackboneTube(points, colorHex) {
   const curve = new THREE.CatmullRomCurve3(points);
   const geometry = new THREE.TubeGeometry(curve, 100, 0.4, 8, false);
-  const material = new THREE.MeshStandardMaterial({
-    color: colorHex,
-    roughness: 0.3,
-    metalness: 0.2
-  });
-  const tube = new THREE.Mesh(geometry, material);
-  dnaGroup.add(tube);
+  const material = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3 });
+  dnaGroup.add(new THREE.Mesh(geometry, material));
 }
 
-// Helper: Create Color-Coded Base Pair Spheres & Connectors
-function createBasePair(p1, p2, base1, base2) {
-  const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+function createBasePair(p1, p2, base1, base2, index) {
+  const sphereGeom = new THREE.SphereGeometry(0.7, 16, 16);
 
-  // Half-rung 1
-  const geom1 = new THREE.CylinderGeometry(0.25, 0.25, p1.distanceTo(midpoint), 8);
-  geom1.translate(0, p1.distanceTo(midpoint) / 2, 0);
-  geom1.rotateX(Math.PI / 2);
-
+  // Strand 1 Sphere Node
   const mat1 = new THREE.MeshStandardMaterial({ color: BASE_COLORS[base1] });
-  const mesh1 = new THREE.Mesh(geom1, mat1);
-  mesh1.position.copy(p1);
-  mesh1.lookAt(midpoint);
-  dnaGroup.add(mesh1);
-
-  // Half-rung 2
-  const geom2 = new THREE.CylinderGeometry(0.25, 0.25, p2.distanceTo(midpoint), 8);
-  geom2.translate(0, p2.distanceTo(midpoint) / 2, 0);
-  geom2.rotateX(Math.PI / 2);
-
-  const mat2 = new THREE.MeshStandardMaterial({ color: BASE_COLORS[base2] });
-  const mesh2 = new THREE.Mesh(geom2, mat2);
-  mesh2.position.copy(p2);
-  mesh2.lookAt(midpoint);
-  dnaGroup.add(mesh2);
-
-  // Nucleotide node spheres
-  const sphereGeom = new THREE.SphereGeometry(0.6, 16, 16);
   const node1 = new THREE.Mesh(sphereGeom, mat1);
   node1.position.copy(p1);
+  node1.userData = { index, base: base1, pair: base2, strand: 1 };
   dnaGroup.add(node1);
 
+  // Strand 2 Sphere Node
+  const mat2 = new THREE.MeshStandardMaterial({ color: BASE_COLORS[base2] });
   const node2 = new THREE.Mesh(sphereGeom, mat2);
   node2.position.copy(p2);
+  node2.userData = { index, base: base2, pair: base1, strand: 2 };
   dnaGroup.add(node2);
 }
 
-// 4. Render Loop with Continuous Auto-Rotation
+// Interactivity: Raycasting on Canvas Click
+function onCanvasClick(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(dnaGroup.children);
+
+  const sphere = intersects.find(item => item.object.geometry.type === 'SphereGeometry');
+
+  if (sphere) {
+    selectNode(sphere.object);
+  }
+}
+
+function selectNode(node) {
+  deselectNode();
+  selectedNode = node;
+  selectedNode.material.emissive.setHex(0xffff00); // Glow yellow
+
+  const data = selectedNode.userData;
+  inspectPos.textContent = `BP #${data.index + 1}`;
+  inspectBase.textContent = `${BASE_NAMES[data.base]} (${data.base})`;
+  inspectPair.textContent = `${BASE_NAMES[data.pair]} (${data.pair})`;
+  btnMutate.disabled = false;
+}
+
+function deselectNode() {
+  if (selectedNode) {
+    selectedNode.material.emissive.setHex(0x000000);
+    selectedNode = null;
+  }
+  inspectPos.textContent = 'None';
+  inspectBase.textContent = '--';
+  inspectPair.textContent = '--';
+  btnMutate.disabled = true;
+}
+
+// Point Mutation logic
+function mutateSelectedBase() {
+  if (!selectedNode) return;
+
+  const data = selectedNode.userData;
+  const bases = ['A', 'T', 'C', 'G'].filter(b => b !== data.base);
+  const newBase = bases[Math.floor(Math.random() * bases.length)];
+
+  data.base = newBase;
+  selectedNode.material.color.setHex(BASE_COLORS[newBase]);
+
+  inspectBase.textContent = `${BASE_NAMES[newBase]} (${newBase}) [MUTATED]`;
+}
+
 function animate() {
   requestAnimationFrame(animate);
-
-  // Slowly spin the double helix for a dynamic cinematic view
-  if (dnaGroup) {
-    dnaGroup.rotation.y += 0.005;
-  }
-
+  if (dnaGroup) dnaGroup.rotation.y += 0.003;
   controls.update();
   renderer.render(scene, camera);
 }
 
-// 5. Handle Window Resizing
 function onWindowResize() {
   camera.aspect = container.clientWidth / container.clientHeight;
   camera.updateProjectionMatrix();
@@ -190,4 +201,3 @@ function onWindowResize() {
 }
 
 init();
-  
