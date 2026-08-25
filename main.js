@@ -2,7 +2,7 @@ let scene, camera, renderer, controls;
 let dnaGroup;
 let raycaster, mouse;
 let selectedNode = null;
-let dnaData = []; // Array storing sequence data for mutation/inspection
+let dnaData = [];
 
 const container = document.getElementById('canvas-container');
 const btnGenerate = document.getElementById('btn-generate');
@@ -43,7 +43,6 @@ function init() {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  // Raycaster for mouse interaction
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
@@ -118,23 +117,41 @@ function createBackboneTube(points, colorHex) {
 
 function createBasePair(p1, p2, base1, base2, index) {
   const sphereGeom = new THREE.SphereGeometry(0.7, 16, 16);
+  const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
 
-  // Strand 1 Sphere Node
+  // Connecting Base Pair Rungs (Cylinders)
+  const dist = p1.distanceTo(midpoint);
+  
+  const geom1 = new THREE.CylinderGeometry(0.2, 0.2, dist, 8);
+  geom1.translate(0, dist / 2, 0);
+  geom1.rotateX(Math.PI / 2);
   const mat1 = new THREE.MeshStandardMaterial({ color: BASE_COLORS[base1] });
+  const mesh1 = new THREE.Mesh(geom1, mat1);
+  mesh1.position.copy(p1);
+  mesh1.lookAt(midpoint);
+  dnaGroup.add(mesh1);
+
+  const geom2 = new THREE.CylinderGeometry(0.2, 0.2, dist, 8);
+  geom2.translate(0, dist / 2, 0);
+  geom2.rotateX(Math.PI / 2);
+  const mat2 = new THREE.MeshStandardMaterial({ color: BASE_COLORS[base2] });
+  const mesh2 = new THREE.Mesh(geom2, mat2);
+  mesh2.position.copy(p2);
+  mesh2.lookAt(midpoint);
+  dnaGroup.add(mesh2);
+
+  // Interactive Spheres (Nucleotide Nodes)
   const node1 = new THREE.Mesh(sphereGeom, mat1);
   node1.position.copy(p1);
   node1.userData = { index, base: base1, pair: base2, strand: 1 };
   dnaGroup.add(node1);
 
-  // Strand 2 Sphere Node
-  const mat2 = new THREE.MeshStandardMaterial({ color: BASE_COLORS[base2] });
   const node2 = new THREE.Mesh(sphereGeom, mat2);
   node2.position.copy(p2);
   node2.userData = { index, base: base2, pair: base1, strand: 2 };
   dnaGroup.add(node2);
 }
 
-// Interactivity: Raycasting on Canvas Click
 function onCanvasClick(event) {
   const rect = renderer.domElement.getBoundingClientRect();
   mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
@@ -153,7 +170,7 @@ function onCanvasClick(event) {
 function selectNode(node) {
   deselectNode();
   selectedNode = node;
-  selectedNode.material.emissive.setHex(0xffff00); // Glow yellow
+  selectedNode.material.emissive.setHex(0xffff00);
 
   const data = selectedNode.userData;
   inspectPos.textContent = `BP #${data.index + 1}`;
@@ -173,7 +190,6 @@ function deselectNode() {
   btnMutate.disabled = true;
 }
 
-// Point Mutation logic
 function mutateSelectedBase() {
   if (!selectedNode) return;
 
@@ -201,3 +217,4 @@ function onWindowResize() {
 }
 
 init();
+    
