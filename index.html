@@ -6,14 +6,12 @@
   <title>3D Computational Genomics Platform</title>
   <link rel="stylesheet" href="style.css">
   
-  <!-- Load Three.js and OrbitControls from CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
   <div id="app">
-    <!-- Left Sidebar Control Panel -->
     <aside id="sidebar">
       <div class="header">
         <h2>Helix3D Engine</h2>
@@ -36,13 +34,22 @@
           <span id="metric-status" class="value text-green">Ready</span>
         </div>
       </div>
+
+      <!-- New: Active Inspector Panel -->
+      <div class="panel-section">
+        <h3>Selected Nucleotide</h3>
+        <div class="inspector-card">
+          <p><strong>Position:</strong> <span id="inspect-pos">None</span></p>
+          <p><strong>Base:</strong> <span id="inspect-base">--</span></p>
+          <p><strong>Pair:</strong> <span id="inspect-pair">--</span></p>
+        </div>
+        <button id="btn-mutate" class="secondary-btn" disabled>Mutate Base Pair</button>
+      </div>
     </aside>
 
-    <!-- Right 3D Canvas Area -->
     <main id="canvas-container"></main>
   </div>
 
   <script src="main.js"></script>
 </body>
 </html>
-
