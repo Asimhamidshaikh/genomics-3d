@@ -19,8 +19,10 @@
       </div>
 
       <div class="panel-section">
-        <h3>Structure Controls</h3>
-        <button id="btn-generate" class="primary-btn">Generate DNA Strand</button>
+        <h3>Sequence Input (FASTA)</h3>
+        <input type="text" id="fasta-input" placeholder="e.g. ATGCGATCGATC" class="text-input" />
+        <button id="btn-load-fasta" class="primary-btn">Render Sequence</button>
+        <button id="btn-generate" class="secondary-btn-blue">Random 3D Strand</button>
       </div>
 
       <div class="panel-section">
@@ -35,7 +37,6 @@
         </div>
       </div>
 
-      <!-- New: Active Inspector Panel -->
       <div class="panel-section">
         <h3>Selected Nucleotide</h3>
         <div class="inspector-card">
@@ -44,6 +45,11 @@
           <p><strong>Pair:</strong> <span id="inspect-pair">--</span></p>
         </div>
         <button id="btn-mutate" class="secondary-btn" disabled>Mutate Base Pair</button>
+      </div>
+
+      <div class="panel-section">
+        <h3>Data Export</h3>
+        <button id="btn-export-pdb" class="primary-btn export-btn">Export Structure (.PDB)</button>
       </div>
     </aside>
 
