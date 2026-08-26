@@ -50,7 +50,9 @@ function init() {
   btnLoadFasta.addEventListener('click', loadFastaSequence);
   btnMutate.addEventListener('click', mutateSelectedBase);
   btnExportPdb.addEventListener('click', exportToPDB);
-  window.addEventListener('click', onCanvasClick);
+  
+  // Listening to pointerdown fixes selection on touchscreens/tablets
+  renderer.domElement.addEventListener('pointerdown', onCanvasClick);
   window.addEventListener('resize', onWindowResize);
 
   generateRandomDNA(30);
@@ -126,7 +128,7 @@ function createBackboneTube(points, colorHex) {
 }
 
 function createBasePair(p1, p2, base1, base2, index) {
-  const sphereGeom = new THREE.SphereGeometry(0.7, 16, 16);
+  const sphereGeom = new THREE.SphereGeometry(0.8, 16, 16);
   const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
 
   const dist = p1.distanceTo(midpoint);
@@ -149,12 +151,12 @@ function createBasePair(p1, p2, base1, base2, index) {
   mesh2.lookAt(midpoint);
   dnaGroup.add(mesh2);
 
-  const node1 = new THREE.Mesh(sphereGeom, mat1);
+  const node1 = new THREE.Mesh(sphereGeom, mat1.clone());
   node1.position.copy(p1);
   node1.userData = { index, base: base1, pair: base2, strand: 1 };
   dnaGroup.add(node1);
 
-  const node2 = new THREE.Mesh(sphereGeom, mat2);
+  const node2 = new THREE.Mesh(sphereGeom, mat2.clone());
   node2.position.copy(p2);
   node2.userData = { index, base: base2, pair: base1, strand: 2 };
   dnaGroup.add(node2);
@@ -162,14 +164,19 @@ function createBasePair(p1, p2, base1, base2, index) {
 
 function onCanvasClick(event) {
   const rect = renderer.domElement.getBoundingClientRect();
-  mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
-  mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+  
+  // Calculate touch/click position inside the 3D canvas
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(dnaGroup.children);
+
   const sphere = intersects.find(item => item.object.geometry.type === 'SphereGeometry');
 
-  if (sphere) selectNode(sphere.object);
+  if (sphere) {
+    selectNode(sphere.object);
+  }
 }
 
 function selectNode(node) {
@@ -206,7 +213,6 @@ function mutateSelectedBase() {
   inspectBase.textContent = `${BASE_NAMES[newBase]} (${newBase}) [MUTATED]`;
 }
 
-// Export structural dataset as standard .PDB file
 function exportToPDB() {
   if (dnaData.length === 0) return;
 
@@ -219,7 +225,6 @@ function exportToPDB() {
     const y1 = item.pos1.y.toFixed(3).padStart(8, ' ');
     const z1 = item.pos1.z.toFixed(3).padStart(8, ' ');
     
-    // ATOM format line for Strand 1
     pdbOutput += `ATOM  ${atomIndex.toString().padStart(5, ' ')}  P   ${resName} A${(i+1).toString().padStart(4, ' ')}    ${x1}${y1}${z1}  1.00  0.00           P\n`;
     atomIndex++;
   });
@@ -245,4 +250,4 @@ function onWindowResize() {
 }
 
 init();
-
+    
